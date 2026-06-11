@@ -207,3 +207,10 @@ marimo/_lsp/
 __marimo__/
 
 notes.md
+
+# LaTeX / Beamer build artifacts
+*.aux
+*.nav
+*.out
+*.snm
+*.toc
