@@ -41,9 +41,9 @@
 \begin{frame}{Problema y objetivo}
   \begin{itemize}
     \item Potrerillos, Mendoza --- \textbf{viento térmico}
-    \item Estación Windguru 15338 (club náutico)
-    \item Endógena: \texttt{wind\_avg} (nudos)
-    \item Exógenas: \texttt{wind\_max}, temperatura, humedad, presión, dirección
+    \item Estación Ecowitt WS90 (club náutico)
+    \item Endógena: viento promedio (nudos)
+    \item Exógenas: viento máximo, temperatura, humedad, presión, dirección
     \vspace{0.5em}
     \item Objetivo: pronóstico a \textbf{12 horas} (1 predicción por hora)
   \end{itemize}
@@ -83,7 +83,7 @@
   \begin{itemize}\itemsep0pt
     \item ACF lag 24: $+0.5$ · lag 12: negativo (espejo día/noche)
     \item PACF: solo lags \textbf{1--2 y 20--24}
-    \item ADF: $p \approx 10^{-21}$ $\to$ \textbf{estacionaria} (sin diferenciar)
+    \item ADF: $p \approx 7.58\times10^{-21}$ $\to$ \textbf{estacionaria} (sin diferenciar)
   \end{itemize}
   \vspace{0.6em}
   \centering
@@ -116,7 +116,7 @@
 % ---------- Slide 8: LassoCV ----------
 \begin{frame}{Modelo de ML: LassoCV}
   \begin{itemize}\itemsep0pt
-    \item 32 features: \textbf{24 lags} + 5 exógenas + \textbf{sin/cos hora}
+    \item 31 features: \textbf{24 lags} + 5 exógenas + \textbf{sin/cos hora}
     \item L1 $\to$ selección automática · RMSE \textbf{2.8 kt} ($-24\,\%$) · $R^2$ 0.52
   \end{itemize}
   \vspace{0.6em}
@@ -134,7 +134,7 @@
 \begin{frame}{Modelo superador: SARIMA --- selección}
   \begin{itemize}\itemsep4pt
     \item ACF/PACF $\to$ AR corto + estacional $S=24$, $d=D=0$
-    \item Grid search por \textbf{AIC}: $p,q \in \{0,1,2\}$ · $P,Q \in \{0,1\}$
+    \item Grid search por \textbf{AIC}: $p \in \{0,1,2\}$ · $q \in \{0,1\}$ · $P,Q \in \{0,1\}$
     \item Elegido: \textbf{SARIMA$(2,0,1)(1,0,1)_{24}$}
   \end{itemize}
   \vspace{2em}
@@ -169,7 +169,7 @@
 \begin{frame}{Alternativas: redes neuronales --- RMSE por horizonte}
   \begin{itemize}\itemsep0pt
     \item Dense / LSTM · ventana $W{=}48$ · salida directa $H{=}12$
-    \item LSTM: RMSE \textbf{2.8 kt} --- no supera a SARIMA (8$\times$ más parámetros)
+    \item LSTM: RMSE \textbf{2.8 kt} --- no supera a SARIMA
   \end{itemize}
   \vspace{0.6em}
   \centering
