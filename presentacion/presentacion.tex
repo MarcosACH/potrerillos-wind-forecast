@@ -1,6 +1,6 @@
 % Presentación TP final — Pronóstico de viento en Potrerillos
 % Compilar: tectonic presentacion.tex
-\documentclass[17pt,aspectratio=169]{beamer}
+\documentclass[12pt,aspectratio=169,t]{beamer}
 
 \usetheme{Madrid}
 \usecolortheme{seahorse}
@@ -52,12 +52,13 @@
 % ---------- Slide 3: datos ----------
 \begin{frame}{Datos}
   \begin{itemize}\itemsep0pt
-    \item \textbf{Ago 2025 $\to$ abr 2026} ($\sim$8.5 meses) --- 1 dato/min $\to$ \textbf{resampleo 1\,h} (6145 obs)
+    \item \textbf{Ago 2025 $\to$ abr 2026} ($\sim$8.5 meses) · 1 dato/min $\to$ \textbf{resampleo 1\,h} (6145 obs)
     \item Mediana (lineales) · \textbf{media circular} (dirección)
     \item Faltantes: 4.5\,\%, 12 gaps de estación $\to$ \textbf{sin imputar}
   \end{itemize}
+  \vspace{0.6em}
   \centering
-  \includegraphics[width=0.95\textwidth,height=0.45\textheight,keepaspectratio]{serie_completa.png}
+  \includegraphics[width=\textwidth,height=0.54\textheight,keepaspectratio]{serie_completa.png}
 \end{frame}
 
 % ---------- Slide 4: EDA ciclo diurno ----------
@@ -66,13 +67,14 @@
     \item Ciclo térmico diario: calma nocturna $\sim$1--2 kt · pico 11--16\,h
     \item Sin tendencia de largo plazo
   \end{itemize}
+  \vspace{0.6em}
   \begin{columns}
-    \column{0.5\textwidth}
+    \column{0.4\textwidth}
       \centering
-      \includegraphics[width=\textwidth,height=0.6\textheight,keepaspectratio]{mediana_hora.png}
-    \column{0.5\textwidth}
+      \includegraphics[width=\textwidth,height=0.66\textheight,keepaspectratio]{mediana_hora.png}
+    \column{0.6\textwidth}
       \centering
-      \includegraphics[width=\textwidth,height=0.6\textheight,keepaspectratio]{descomposicion.png}
+      \includegraphics[width=\textwidth,height=0.66\textheight,keepaspectratio]{descomposicion.png}
   \end{columns}
 \end{frame}
 
@@ -83,8 +85,9 @@
     \item PACF: solo lags \textbf{1--2 y 20--24}
     \item ADF: $p \approx 10^{-21}$ $\to$ \textbf{estacionaria} (sin diferenciar)
   \end{itemize}
+  \vspace{0.6em}
   \centering
-  \includegraphics[width=0.95\textwidth,height=0.46\textheight,keepaspectratio]{acf_pacf.png}
+  \includegraphics[width=\textwidth,height=0.62\textheight,keepaspectratio]{acf_pacf.png}
 \end{frame}
 
 % ---------- Slide 6: frecuencia ----------
@@ -93,8 +96,9 @@
     \item Pico dominante: \textbf{1 ciclo/día} · secundario débil: 2 ciclos/día
     \item Sin periodicidades multi-día $\to$ forzante térmico puro, $S=24$
   \end{itemize}
+  \vspace{0.6em}
   \centering
-  \includegraphics[width=0.95\textwidth,height=0.46\textheight,keepaspectratio]{periodograma.png}
+  \includegraphics[width=\textwidth,height=0.6\textheight,keepaspectratio]{periodograma.png}
 \end{frame}
 
 % ---------- Slide 7: metodologia + benchmark ----------
@@ -104,8 +108,9 @@
     \item Benchmark: \textbf{persistencia estacional} $\;\hat{y}_{t+h} = y_{t+h-24}$
     \item RMSE \textbf{3.6 kt} · MAE 2.6 kt · $R^2$ 0.17
   \end{itemize}
+  \vspace{0.6em}
   \centering
-  \includegraphics[width=0.92\textwidth,height=0.46\textheight,keepaspectratio]{benchmark_horizonte.png}
+  \includegraphics[width=0.85\textwidth,height=0.54\textheight,keepaspectratio]{obs_vs_persistencia.png}
 \end{frame}
 
 % ---------- Slide 8: LassoCV ----------
@@ -114,40 +119,39 @@
     \item 32 features: \textbf{24 lags} + 5 exógenas + \textbf{sin/cos hora}
     \item L1 $\to$ selección automática · RMSE \textbf{2.8 kt} ($-24\,\%$) · $R^2$ 0.52
   \end{itemize}
+  \vspace{0.6em}
   \begin{columns}
     \column{0.52\textwidth}
       \centering
-      \includegraphics[width=\textwidth,height=0.55\textheight,keepaspectratio]{windowing.png}
+      \includegraphics[width=\textwidth,height=0.66\textheight,keepaspectratio]{windowing.png}
     \column{0.48\textwidth}
       \centering
-      \includegraphics[width=\textwidth,height=0.55\textheight,keepaspectratio]{lasso_vs_bench.png}
+      \includegraphics[width=\textwidth,height=0.66\textheight,keepaspectratio]{lasso_vs_bench.png}
   \end{columns}
 \end{frame}
 
 % ---------- Slide 9: SARIMA seleccion ----------
 \begin{frame}{Modelo superador: SARIMA --- selección}
-  \begin{columns}
-    \column{0.55\textwidth}
-      \begin{itemize}\itemsep4pt
-        \item ACF/PACF $\to$ AR corto + estacional $S=24$, $d=D=0$
-        \item Grid search por \textbf{AIC}:\\ $p,q \in \{0,1,2\}$ · $P,Q \in \{0,1\}$
-        \item Elegido: \textbf{SARIMA$(2,0,1)(1,0,1)_{24}$}
-      \end{itemize}
-    \column{0.45\textwidth}
-      \centering
-      \small
-      \begin{tabular}{ccccr}
-        \toprule
-        $p$ & $q$ & $P$ & $Q$ & AIC \\
-        \midrule
-        \textbf{2} & \textbf{1} & \textbf{1} & \textbf{1} & \textbf{20496} \\
-        1 & 1 & 1 & 1 & 20501 \\
-        2 & 0 & 1 & 1 & 20504 \\
-        1 & 0 & 1 & 1 & 20515 \\
-        2 & 1 & 1 & 0 & 21167 \\
-        \bottomrule
-      \end{tabular}
-  \end{columns}
+  \begin{itemize}\itemsep4pt
+    \item ACF/PACF $\to$ AR corto + estacional $S=24$, $d=D=0$
+    \item Grid search por \textbf{AIC}: $p,q \in \{0,1,2\}$ · $P,Q \in \{0,1\}$
+    \item Elegido: \textbf{SARIMA$(2,0,1)(1,0,1)_{24}$}
+  \end{itemize}
+  \vspace{2em}
+  \centering
+  \small
+  \setlength{\tabcolsep}{14pt}
+  \begin{tabular}{ccccr}
+    \toprule
+    $p$ & $q$ & $P$ & $Q$ & AIC \\
+    \midrule
+    \textbf{2} & \textbf{1} & \textbf{1} & \textbf{1} & \textbf{20496} \\
+    1 & 1 & 1 & 1 & 20501 \\
+    2 & 0 & 1 & 1 & 20504 \\
+    1 & 0 & 1 & 1 & 20515 \\
+    2 & 1 & 1 & 0 & 21167 \\
+    \bottomrule
+  \end{tabular}
 \end{frame}
 
 % ---------- Slide 10: SARIMA diagnostico ----------
@@ -156,26 +160,30 @@
     \item Ljung-Box \checkmark{} · Q--Q: \textbf{colas pesadas}
     \item RMSE \textbf{2.6 kt} ($\mathbf{-28\,\%}$) · $R^2$ 0.57 · $h{=}1$: $R^2$ 0.78
   \end{itemize}
+  \vspace{0.6em}
   \centering
-  \includegraphics[width=0.8\textwidth,height=0.26\textheight,keepaspectratio]{sarima_diag2.png}\\[2pt]
-  \includegraphics[width=0.8\textwidth,height=0.26\textheight,keepaspectratio]{sarima_vs_bench.png}
+  \includegraphics[width=\textwidth,height=0.66\textheight,keepaspectratio]{sarima_diag2.png}
 \end{frame}
 
 % ---------- Slide 11: redes ----------
-\begin{frame}{Alternativas: redes neuronales}
+\begin{frame}{Alternativas: redes neuronales --- RMSE por horizonte}
   \begin{itemize}\itemsep0pt
     \item Dense / LSTM · ventana $W{=}48$ · salida directa $H{=}12$
     \item LSTM: RMSE \textbf{2.8 kt} --- no supera a SARIMA (8$\times$ más parámetros)
+  \end{itemize}
+  \vspace{0.6em}
+  \centering
+  \includegraphics[width=\textwidth,height=0.66\textheight,keepaspectratio]{nn_vs_bench.png}
+\end{frame}
+
+% ---------- Slide 11b: redes (val vs test) ----------
+\begin{frame}{Alternativas: redes neuronales --- validación vs test}
+  \begin{itemize}\itemsep0pt
     \item Exógenas pasadas \textbf{no aportan} a resolución horaria
   \end{itemize}
-  \begin{columns}
-    \column{0.47\textwidth}
-      \centering
-      \includegraphics[width=\textwidth,height=0.45\textheight,keepaspectratio]{nn_overfit.png}
-    \column{0.53\textwidth}
-      \centering
-      \includegraphics[width=\textwidth,height=0.45\textheight,keepaspectratio]{nn_vs_bench.png}
-  \end{columns}
+  \vspace{0.6em}
+  \centering
+  \includegraphics[width=\textwidth,height=0.68\textheight,keepaspectratio]{nn_overfit.png}
 \end{frame}
 
 % ---------- Slide 12: comparacion final ----------
@@ -193,30 +201,27 @@
     Persistencia estacional & 2.6 & 3.6 & 0.17 & --- \\
     \bottomrule
   \end{tabular}
-  \vspace{0.5em}
+  \vspace{0.6em}
 
-  \includegraphics[width=0.9\textwidth,height=0.37\textheight,keepaspectratio]{comparacion_final.png}
+  \includegraphics[width=\textwidth,height=0.46\textheight,keepaspectratio]{comparacion_final.png}
 \end{frame}
 
 % ---------- Slide 13: conclusiones ----------
 \begin{frame}{Conclusiones y trabajo futuro}
-  \begin{columns}[t]
-    \column{0.5\textwidth}
-      \textbf{Conclusiones}
-      \begin{itemize}\itemsep2pt
-        \item Viento térmico $\approx$ reloj: \textbf{ciclo 24\,h domina}
-        \item \textbf{SARIMA}: $-28\,\%$ RMSE, simple y suficiente
-        \item Exógenas pasadas: no mejoran
-      \end{itemize}
-    \column{0.5\textwidth}
-      \textbf{Trabajo futuro}
-      \begin{itemize}\itemsep2pt
-        \item \textbf{SARIMAX}
-        \item \textbf{GARCH} $\to$ intervalos honestos
-        \item Encoding circular de dirección
-        \item Exógenas \textbf{pronosticadas} (NWP)
-      \end{itemize}
-  \end{columns}
+  \textbf{Conclusiones}
+  \begin{itemize}\itemsep2pt
+    \item Viento térmico $\approx$ reloj: \textbf{ciclo 24\,h domina}
+    \item \textbf{SARIMA}: $-28\,\%$ RMSE, simple y suficiente
+    \item Exógenas pasadas: no mejoran
+  \end{itemize}
+  \vspace{0.6em}
+  \textbf{Trabajo futuro}
+  \begin{itemize}\itemsep2pt
+    \item \textbf{SARIMAX}
+    \item \textbf{GARCH} $\to$ intervalos honestos
+    \item Encoding circular de dirección
+    \item Exógenas \textbf{pronosticadas} (NWP)
+  \end{itemize}
 \end{frame}
 
 \end{document}

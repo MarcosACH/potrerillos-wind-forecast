@@ -260,7 +260,7 @@ ax.legend()
 save(fig, "nn_vs_bench.png")
 
 # ---------- 12. comparacion final ----------
-fig, axes = plt.subplots(1, 3, figsize=(13.5, 4))
+fig, axes = plt.subplots(1, 3, figsize=(16.5, 4))
 curvas = [
     ("Benchmark", bench, "o", "gray", "--"),
     ("SARIMA", sarima, "s", "C2", "-"),
