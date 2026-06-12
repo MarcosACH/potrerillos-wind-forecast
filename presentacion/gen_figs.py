@@ -319,7 +319,7 @@ val = [0.635, 0.567]
 test = [2.800, 2.980]
 colors = ["C0", "C3"]
 axes[0].bar(labels, val, color=colors, width=0.55)
-axes[0].set_title("Val loss (MSE norm.) ↓")
+axes[0].set_title("Val loss ↓")
 axes[0].set_ylim(0.5, 0.66)
 axes[1].bar(labels, test, color=colors, width=0.55)
 axes[1].set_title("Test RMSE (kt) ↑")
