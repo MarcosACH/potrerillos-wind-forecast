@@ -217,6 +217,90 @@ ax.set_xticks(range(2, 13, 2))
 ax.legend()
 save(fig, "lasso_vs_bench.png")
 
+# ---------- 8b. importancia de atributos Lasso (h=1) ----------
+from matplotlib.patches import Patch
+from sklearn.base import BaseEstimator, TransformerMixin
+from sklearn.linear_model import LassoCV
+from sklearn.model_selection import TimeSeriesSplit
+from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import StandardScaler
+
+N_LAGS = 24
+EXOG = ["wind_max", "temperature", "rh", "mslp", "wind_direction"]
+serie = df["wind_avg"].ffill().bfill()
+n_train = int(0.8 * len(serie))
+
+
+class LagFeatures(TransformerMixin, BaseEstimator):
+    def __init__(self, lags=1):
+        self.lags = lags
+
+    def fit(self, X, y=None):
+        self.X_mean = X.mean()
+        return self
+
+    def transform(self, X):
+        out = pd.DataFrame(index=X.index)
+        for col in X.columns:
+            for lag in range(1, self.lags + 1):
+                out[f"{col}_Lag_{lag}"] = X[col].shift(lag, fill_value=self.X_mean[col])
+        return out
+
+
+def crear_features(obj, exog, h):
+    X = pd.concat([exog, LagFeatures(lags=N_LAGS).fit_transform(obj.to_frame())], axis=1)
+    X["hora_sin"] = np.sin(2 * np.pi * X.index.hour / 24)
+    X["hora_cos"] = np.cos(2 * np.pi * X.index.hour / 24)
+    y = obj.shift(-h).rename("objetivo")
+    return pd.concat([X, y], axis=1).dropna()
+
+
+lasso_imp = Pipeline(
+    [
+        ("scaler", StandardScaler()),
+        ("modelo", LassoCV(cv=TimeSeriesSplit(n_splits=3), max_iter=20000,
+                           n_jobs=-1, alphas=np.logspace(-4, 1, 100))),
+    ]
+)
+df_ml = df.ffill().bfill()
+split_ts = serie.index[n_train]
+gap = pd.Timedelta(hours=12)
+datos = crear_features(df_ml["wind_avg"], df_ml[EXOG], 1)
+train = datos[datos.index < split_ts - gap]
+lasso_imp.fit(train.drop(columns="objetivo"), train["objetivo"])
+coef = pd.Series(lasso_imp.named_steps["modelo"].coef_, index=train.drop(columns="objetivo").columns)
+top = coef.reindex(coef.abs().sort_values().index).tail(12)
+
+
+def _grupo(n):
+    if n in EXOG:
+        return "Exógenas"
+    if n.startswith("hora"):
+        return "Hora (sin/cos)"
+    return "Lags wind_avg"
+
+
+def _etiqueta(n):
+    if n.startswith("wind_avg_Lag_"):
+        return "lag " + n.split("_")[-1]
+    return {"hora_sin": "sin hora", "hora_cos": "cos hora"}.get(n, n)
+
+
+cmap = {"Lags wind_avg": "C0", "Exógenas": "C3", "Hora (sin/cos)": "C1"}
+colors = [cmap[_grupo(n)] for n in top.index]
+fig, ax = plt.subplots(figsize=(8.5, 4.2))
+ax.barh(range(len(top)), top.values, color=colors)
+ax.set_yticks(range(len(top)))
+ax.set_yticklabels([_etiqueta(n) for n in top.index])
+ax.axvline(0, color="gray", lw=0.8)
+ax.set_xlabel("Coeficiente (features estandarizadas)")
+ax.set_title("Importancia Lasso (h = 1)")
+ax.legend(
+    handles=[Patch(color=cmap[g], label=g) for g in ["Lags wind_avg", "Exógenas", "Hora (sin/cos)"]],
+    loc="lower right",
+)
+save(fig, "lasso_importancia.png")
+
 # ---------- 9. SARIMA vs benchmark (3 paneles) ----------
 fig, axes = plt.subplots(1, 3, figsize=(13, 3.8))
 for ax, col, lab in zip(axes, ["MAE", "RMSE", "R2"], ["MAE (kt)", "RMSE (kt)", "R²"]):
