@@ -1,6 +1,6 @@
 # Presentación final — Pronóstico de viento en Potrerillos
 
-Estructura: 13 slides + portada. ~15 min. Slides solo con palabras clave + figuras (sin texto corrido).
+Estructura: 14 slides de contenido (slide 11 dividida en 11 y 11b) + portada + cierre. ~15 min. Slides solo con palabras clave + figuras (sin texto corrido).
 Guion oral: lo que se dice mientras se muestra la slide.
 
 ---
@@ -18,7 +18,7 @@ Guion oral: lo que se dice mientras se muestra la slide.
 ## Slide 1 — Datos del grupo (obligatoria)
 
 **En slide:**
-- Grupo: _(completar)_
+- Grupo: **9**
 - Marcos Achaval — machavalrodriguez@unsam-bue.edu.ar
 - Lucas Achaval — lachavalrodriguez@estudiantes.unsam.edu.ar
 - Título: Pronóstico de viento en Potrerillos
@@ -32,7 +32,7 @@ Guion oral: lo que se dice mientras se muestra la slide.
 
 **En slide (keywords):**
 - Potrerillos, Mendoza — viento térmico
-- Estación Windguru 15338 (club náutico)
+- Estación **Ecowitt WS90** (club náutico)
 - Endógena: `wind_avg` (nudos)
 - Exógenas: `wind_max`, `temperatura`, `humedad`, `presión`, `dirección`
 - Objetivo: pronóstico a **12 horas** (1 predicción por hora)
@@ -86,7 +86,7 @@ Guion oral: lo que se dice mientras se muestra la slide.
 - ACF lag 24: **+0.5** (el patrón se repite cada día)
 - ACF lag 12: **negativo** (espejo día/noche)
 - PACF: solo lags **1–2 y 20–24**
-- ADF: p ≈ 10⁻²¹ → **estacionaria** (sin diferenciar)
+- ADF: p ≈ 7.58×10⁻²¹ → **estacionaria** (sin diferenciar)
 
 **Figura:** E1: ACF + PACF (2 paneles, 48 lags).
 
@@ -134,20 +134,20 @@ Guion oral: lo que se dice mientras se muestra la slide.
 ## Slide 8 — Modelo de ML: LassoCV
 
 **En slide (keywords):**
-- 32 features: **24 lags** + 5 exógenas + **sin/cos hora**
-- Windowing: TimeSeriesSplit, **gap = 12 h** (sin fuga de información)
-- L1 → selección automática de features
+- 31 features: **24 lags** + 5 exógenas + **sin/cos hora**
+- L1 → selección automática de features · gap = 12 h (sin fuga)
 - RMSE **2.8 kt** (−24 % vs benchmark) · R² 0.52
 
 **Figuras:**
-- Esquema simple del windowing (lags → ventana → target a h)
-- E1: RMSE por horizonte baseline vs Lasso (train≈test → sin overfitting)
+- E2: importancia Lasso (coeficientes en h=1, coloreados por grupo: lags / exógenas / hora) — `lasso_importancia.png`
+- E2: RMSE por horizonte Lasso vs benchmark — `lasso_vs_bench.png`
 
 **Guion (1.5 min):**
 - Features: la historia (24 lags), el contexto meteorológico (exógenas) y la hora codificada circularmente (hora 23 y 0 son vecinas).
-- Windowing con gap de 12 h: el test nunca ve datos que el modelo no tendría al predecir.
+- Windowing con gap de 12 h: el test nunca ve datos que el modelo no tendría al predecir (metodología detallada en slide 7).
 - El L1 apaga features irrelevantes solo — regularización elegida por CV.
-- Resultado: −24 % de RMSE; curvas train/test pegadas → generaliza bien.
+- **Importancia (h=1, el horizonte más útil para navegar):** largo de barra = importancia, signo = dirección. Domina `wind_max` —proxy del viento actual, no info meteorológica nueva— seguido de la hora y algunos lags estacionales; las exógenas meteorológicas puras (temp, humedad, presión, dirección) quedan en ~0. Refuerza que la señal vive en el propio viento + ciclo diario. (Ver *Preguntas anticipadas*: signo negativo y por qué `temperature` ≈ 0 no contradice el viento térmico.)
+- Resultado: −24 % de RMSE; generaliza bien (sin overfitting).
 
 ---
 
@@ -155,7 +155,7 @@ Guion oral: lo que se dice mientras se muestra la slide.
 
 **En slide (keywords):**
 - ACF/PACF → AR corto + estacional S=24, d=D=0
-- Grid search por **AIC**: p,q ∈ {0,1,2} · P,Q ∈ {0,1}
+- Grid search por **AIC**: p ∈ {0,1,2} · q ∈ {0,1} · P,Q ∈ {0,1} (24 combinaciones)
 - Elegido: **SARIMA(2,0,1)(1,0,1,24)** — AIC 20496
 
 **Figura:** E2: tabla top-5 del grid AIC.
@@ -186,21 +186,30 @@ Guion oral: lo que se dice mientras se muestra la slide.
 
 ---
 
-## Slide 11 — Alternativas: redes neuronales
+## Slide 11 — Alternativas: redes neuronales — RMSE por horizonte
 
 **En slide (keywords):**
-- Dense / LSTM (ventana **W=48**, salida directa H=12)
-- LSTM: RMSE **2.8 kt** — no supera a SARIMA (8× más parámetros)
-- LSTM + exógenas: val loss ↓ pero test ↑ (2.98 kt) → **overfitting**
+- Dense / LSTM · ventana **W=48** · salida directa H=12
+- LSTM: RMSE **2.8 kt** — no supera a SARIMA
+
+**Figura:** E2: RMSE por horizonte — LSTM, LSTM-exo y SARIMA (ref.) vs benchmark (`nn_vs_bench.png`).
+
+**Guion (1 min):**
+- Validamos si más capacidad ayuda: ventana de 48 h (2 ciclos), salida directa de 12 pasos, early stopping.
+- Probamos 3 configuraciones (Dense, LSTM, LSTM-2capas); elegimos la LSTM simple por menor val loss y parsimonia.
+- La LSTM queda apenas por detrás de SARIMA con mucha más complejidad.
+
+---
+
+## Slide 11b — Alternativas: redes neuronales — validación vs test
+
+**En slide (keywords):**
+- LSTM + exógenas: val loss ↓ (0.567) pero test RMSE ↑ (2.98 kt) → **overfitting**
 - Las exógenas pasadas **no aportan** a resolución horaria
 
-**Figuras:**
-- E2: curvas de aprendizaje (val loss por época)
-- E2: comparación LSTM vs LSTM-exo por horizonte (o mini-tabla)
+**Figura:** E2: val loss vs test RMSE de LSTM vs LSTM-exo (`nn_overfit.png`).
 
-**Guion (1.5 min):**
-- Validamos si más capacidad ayuda: ventana de 48 h (2 ciclos), salida directa de 12 pasos, early stopping.
-- LSTM queda apenas por detrás de SARIMA con mucha más complejidad.
+**Guion (1 min):**
 - Hallazgo interesante: agregar exógenas mejora validación pero empeora test — aprenden patrones espurios. La historia del propio viento + el ciclo de 24 h ya contienen la señal.
 - Esto refuerza la elección de SARIMA: la dinámica es autorregresiva + estacional, y el modelo simple la captura.
 
@@ -253,12 +262,33 @@ Futuro:
 - Métricas redondeadas a 2 cifras significativas (consigna).
 - Usar siempre los números de E2 (misma metodología walk-forward para todos los modelos).
 - Fuente ≥16 pt en todo, incluidas leyendas y escalas de gráficos → regenerar figuras de los notebooks con `fontsize` grande antes de exportar.
-- Tiempos: 30s + 1+1+1+1.5+1+1.5+1.5+1.5+1.5+1.5+1.5+1 ≈ 15 min.
+- Tiempos: 30s + 1+1+1+1.5+1+1.5+1.5+1.5+1.5+1+1+1.5+1 ≈ 15 min (slides 11 y 11b ~1 min c/u).
+
+## Preguntas anticipadas (defensa)
+
+Material de respaldo para Q&A, sobre todo del gráfico de importancia (slide 8) y la metodología de pronóstico multi-horizonte.
+
+**¿Un coeficiente negativo significa "menos importante"?**
+No. Sobre features estandarizadas, el **signo = dirección** de la relación y el **tamaño (`|coef|`) = importancia**. Una barra larga hacia la izquierda importa tanto como una hacia la derecha. Ej.: `cos hora` negativo *codifica* el ciclo diario — `cos = +1` a medianoche empuja el viento hacia abajo (calma nocturna), `cos = −1` al mediodía lo empuja hacia arriba (pico diurno). El signo es la física correcta, no un defecto.
+
+**Si el viento es térmico, ¿por qué `temperature` ≈ 0?**
+No se contradice. "Térmico" es el **driver físico** (ciclo de calentamiento), no el valor del termómetro en `t`. Tres razones:
+- **Redundancia:** ese ciclo ya lo capturan `sin/cos hora` + los lags del propio viento → la temperatura no agrega info nueva y L1 la apaga por colinealidad (cero por redundancia, no por irrelevancia).
+- **Es el gradiente, no el valor absoluto:** el viento térmico lo mueve la *diferencia* de temperatura (valle/ladera, tierra/agua) y la *tasa* de calentamiento; un único termómetro no mide ese gradiente.
+- **Analogía:** las mareas las causa la Luna, pero se predicen con la tabla de mareas (el ciclo), no midiendo la Luna en vivo. El modelo **sí** usa la señal térmica — vía hora + periodicidad del viento, proxies más limpios que el grado de temperatura.
+
+**¿Por qué Lasso ajusta 12 modelos (uno por horizonte) y SARIMA/LSTM uno solo?** Todos usan *direct/recursive multi-step*, pero distinto:
+- **LSTM (1 fit):** una red con capa final `Dense(12)`. La celda LSTM comprime la ventana en una representación oculta **compartida**; las 12 salidas son 12 cabezas lineales que leen ese mismo estado. Se entrenan juntas en una pasada.
+- **SARIMA (1 fit):** una ecuación generativa que se **itera** hacia adelante (recursivo). Los pesos efectivos por horizonte salen como `φʰ` — distintos en cada `h` pero **derivados** de un único coeficiente, no re-estimados.
+- **Lasso (12 fits):** `ŷ = w·x` tiene salida escalar y no hay ni cuerpo compartido ni ecuación que iterar. Para 12 targets distintos hacen falta 12 vectores de pesos → 12 modelos (*direct multi-step*; se eligió sobre el recursivo para no acumular error de iteración).
+- En una frase: **la LSTM ramifica, SARIMA itera, Lasso replica.**
 
 ## Pendientes
 
-- [ ] Nombre del grupo, apellido y email de Lucas (slide 1)
-- [ ] Confirmar link exacto del dataset (¿windguru.cz/station/15338?)
-- [ ] Decidir imagen de contexto para slide 2 (foto/mapa/screenshot)
-- [ ] ¿Existe figura de la serie completa con gaps para slide 3? Si no, generarla
-- [ ] Regenerar figuras con fuentes grandes para exportar
+- [x] Datos del grupo y emails (slide 1) — Grupo 9, ambos integrantes
+- [x] Link del dataset confirmado (windguru.cz/station/15338)
+- [x] Slide 2 sin imagen: solo texto (estación Ecowitt WS90)
+- [x] Figura de serie completa con gaps (`serie_completa.png`)
+- [ ] Verificar fuente ≥16 pt en leyendas/escalas: `gen_figs.py` usa 14 pt en ticks y leyenda
+- [ ] Confirmar que la estación es "Ecowitt WS90" (dato de slide 2, no figura en los notebooks)
+- [x] Importancia de parámetros (consigna pto 8): bar de coeficientes Lasso en h=1 (slide 8)
