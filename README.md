@@ -24,6 +24,8 @@ Potrerillos (Mendoza) es un embalse de montaña cuya actividad náutica depende 
 | Agregación | mediana para variables lineales, media circular para dirección |
 | Valores faltantes | ~4.5 %, 12 gaps de estación (sin imputar) |
 
+![Serie horaria completa; en rojo los tramos con la estación offline (4.5 %)](presentacion/figs/serie_completa.png)
+
 **Variables:**
 
 | Variable | Tipo | Descripción |
@@ -48,6 +50,10 @@ La evaluación de todos los modelos usa **walk-forward** con split 80/20 cronol�
 - ADF confirma estacionariedad (p ≈ 7.6×10⁻²¹, sin diferenciar).
 - Periodograma: pico dominante en 1 ciclo/día y secundario en 2 ciclos/día.
 
+![Mediana de viento por hora del día; en naranja el período térmico (10–19 h)](presentacion/figs/mediana_hora.png)
+
+![Periodograma y espectro de potencias suavizado: dominante en 1 ciclo/día](presentacion/figs/periodograma.png)
+
 ### Modelado y resultados
 
 | Modelo | MAE (kt) | RMSE (kt) | R² | Δ RMSE vs benchmark |
@@ -58,11 +64,15 @@ La evaluación de todos los modelos usa **walk-forward** con split 80/20 cronol�
 | LSTM + exógenas | 2.3 | 3.0 | 0.44 | −18 % |
 | Persistencia estacional (benchmark) | 2.6 | 3.6 | 0.17 | — |
 
+![Comparación de modelos por horizonte: MAE, RMSE y R²](presentacion/figs/comparacion_final.png)
+
 **Benchmark:** persistencia estacional — ŷ(t+h) = y(t+h−24).
 
 **LassoCV:** 31 features (24 lags + 5 exógenas + sin/cos hora), gap de 12 h para evitar fuga, 12 modelos directos (uno por horizonte).
 
 **SARIMA:** selección de orden por grid search AIC sobre p∈{0,1,2}, q∈{0,1}, P,Q∈{0,1} con S=24. Residuos sin autocorrelación; colas pesadas en Q-Q.
+
+![Diagnóstico de residuos del SARIMA: residuos estandarizados, histograma, Q-Q y correlograma](presentacion/figs/sarima_diag.png)
 
 **LSTM:** ventana W=48, salida directa H=12, early stopping. Agregar exógenas mejora validación pero empeora test (overfitting).
 
